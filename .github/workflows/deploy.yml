@@ -52,7 +52,7 @@ jobs:
               sudo apt install -y wget apt-transport-https gnupg
               sudo mkdir -p /etc/apt/keyrings
               wget -O- https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo tee /etc/apt/keyrings/adoptium.asc
-              echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb/ bookworm main" | sudo tee /etc/apt/sources.list.d/adoptium.list
+              echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb/ noble main" | sudo tee /etc/apt/sources.list.d/adoptium.list
               sudo apt update -y
               sudo apt install -y temurin-23-jdk
             fi
