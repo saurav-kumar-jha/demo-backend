@@ -48,14 +48,12 @@ jobs:
             # 🧩 Install Java 25 if not available
             if ! java -version 2>/dev/null | grep -q "25"; then
               echo "Installing OpenJDK 25..."
-              sudo apt update -y
-              sudo apt install -y wget apt-transport-https gnupg
-              sudo mkdir -p /etc/apt/keyrings
-              wget -O- https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo tee /etc/apt/keyrings/adoptium.asc
-              echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb/ noble main" | sudo tee /etc/apt/sources.list.d/adoptium.list
+              wget -O- https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo tee /usr/share/keyrings/adoptium.asc
+              echo "deb [signed-by=/usr/share/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb stable main" | sudo tee /etc/apt/sources.list.d/adoptium.list
               sudo apt update -y
               sudo apt install -y temurin-25-jdk
             fi
+            
 
             java -version
 
