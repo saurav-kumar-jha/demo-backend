@@ -1,0 +1,68 @@
+name: Deploy Spring Boot App to EC2 (Java 23)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 23
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'   # or 'zulu' — both support Java 23
+          java-version: '23'
+
+      - name: Build Spring Boot JAR
+        run: |
+          mvn clean package -DskipTests
+          ls target
+
+      - name: Upload JAR to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "target/*.jar"
+          target: "/home/${{ secrets.EC2_USER }}/springboot-app/"
+          overwrite: true
+
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          script: |
+            cd /home/${{ secrets.EC2_USER }}/springboot-app
+
+            # 🧩 Install Java 23 if not available
+            if ! java -version 2>/dev/null | grep -q "23"; then
+              echo "Installing OpenJDK 23..."
+              sudo apt update -y
+              sudo apt install -y wget apt-transport-https gnupg
+              sudo mkdir -p /etc/apt/keyrings
+              wget -O- https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo tee /etc/apt/keyrings/adoptium.asc
+              echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb/ bookworm main" | sudo tee /etc/apt/sources.list.d/adoptium.list
+              sudo apt update -y
+              sudo apt install -y temurin-23-jdk
+            fi
+
+            java -version
+
+            # Stop old instance if running
+            fuser -k 8080/tcp || true
+
+            # Find and run the latest JAR
+            JAR_FILE=$(ls *.jar | head -n 1)
+            nohup java -jar $JAR_FILE > app.log 2>&1 &
+            echo "✅ Spring Boot (Java 23) app deployed successfully!"
